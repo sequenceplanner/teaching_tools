@@ -1,8 +1,8 @@
 {
     "show": true,
     "active": false,
-    "child_frame": "ghost_svt_tcp",
-    "parent_frame": "ghost_svt",
+    "child_frame_id": "ghost_svt_tcp",
+    "parent_frame_id": "ghost_svt",
     "transform": {
         "translation": {
             "x": 0.0,

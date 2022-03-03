@@ -1,8 +1,8 @@
 {
     "show": true,
     "active": false,
-    "child_frame": "ghost_base_link",
-    "parent_frame": "world",
+    "child_frame_id": "ghost_base_link",
+    "parent_frame_id": "world",
     "transform": {
         "translation": {
             "x": 0.0,

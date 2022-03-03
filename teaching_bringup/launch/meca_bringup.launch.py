@@ -16,17 +16,9 @@ from launch_ros.actions import Node
 def generate_launch_description():
     dir = FindPackageShare("teaching_bringup").find("teaching_bringup")
 
-    robot_parameters_path = os.path.join(
-        dir, "robots", "ursim10e", "general.json"
-    )
-
-    tf_parameters = {
+    scenario_path = {
         "scenario_path": os.path.join(dir, "scenario", "meca500"), 
-        # "meshes_path": "/ros/ia_ros_meshes" // add viz
     }
-
-    with open(robot_parameters_path) as jsonfile:
-        robot_parameters = json.load(jsonfile)
 
     declared_arguments = []
 
@@ -115,22 +107,22 @@ def generate_launch_description():
         remappings=[("/tf", "tf"), ("/tf_static", "tf_static")],
     )
 
+    tfbc_node = Node(
+        package="teaching_tfbc",
+        executable="broadcaster",
+        namespace="",
+        output="screen",
+        parameters=[scenario_path],
+        remappings=[("/tf", "tf"), ("/tf_static", "tf_static")],
+        emulate_tty=True,
+    )
+
     tf_lookup_node = Node(
         package="tf_lookup",
         executable="tf_lookup",
         namespace="",
         output="screen",
-        parameters=[tf_parameters],
-        remappings=[("/tf", "tf"), ("/tf_static", "tf_static")],
-        emulate_tty=True,
-    )
-
-    tf_broadcast_node = Node(
-        package="tf_broadcast",
-        executable="tf_broadcast",
-        namespace="",
-        output="screen",
-        parameters=[tf_parameters],
+        parameters=[scenario_path],
         remappings=[("/tf", "tf"), ("/tf_static", "tf_static")],
         emulate_tty=True,
     )
@@ -149,8 +141,8 @@ def generate_launch_description():
         ghost_robot_state_publisher_node,
         teaching_ghost_node,
         rviz_node,
+        tfbc_node,
         tf_lookup_node,
-        tf_broadcast_node,
         teaching_marker_node
     ]
 

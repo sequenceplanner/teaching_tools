@@ -16,8 +16,7 @@ from launch_ros.actions import Node
 def generate_launch_description():
     dir = FindPackageShare("teaching_bringup").find("teaching_bringup")
 
-
-    tf_parameters = {
+    scenario_path = {
         "scenario_path": os.path.join(dir, "scenario", "panda")
     }
 
@@ -108,17 +107,17 @@ def generate_launch_description():
         executable="tf_lookup",
         namespace="",
         output="screen",
-        parameters=[tf_parameters],
+        parameters=[scenario_path],
         remappings=[("/tf", "tf"), ("/tf_static", "tf_static")],
         emulate_tty=True,
     )
 
-    tf_broadcast_node = Node(
-        package="tf_broadcast",
-        executable="tf_broadcast",
+    tfbc_node = Node(
+        package="teaching_tfbc",
+        executable="broadcaster",
         namespace="",
         output="screen",
-        parameters=[tf_parameters],
+        parameters=[scenario_path],
         remappings=[("/tf", "tf"), ("/tf_static", "tf_static")],
         emulate_tty=True,
     )
@@ -138,7 +137,7 @@ def generate_launch_description():
         teaching_ghost_node,
         rviz_node,
         tf_lookup_node,
-        tf_broadcast_node,
+        tfbc_node,
         teaching_marker_node
     ]
 

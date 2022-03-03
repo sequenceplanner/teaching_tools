@@ -1,8 +1,8 @@
 {
     "show": true,
     "active": false,
-    "child_frame": "ghost_rsp_tool0",
-    "parent_frame": "ghost_tool0",
+    "child_frame_id": "ghost_rsp_tool0",
+    "parent_frame_id": "ghost_tool0",
     "transform": {
         "translation": {
             "x": 0.0,

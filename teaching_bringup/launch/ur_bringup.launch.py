@@ -19,9 +19,8 @@ def generate_launch_description():
         dir, "robots", "ursim10e", "general.json"
     )
 
-    tf_parameters = {
+    scenario_path = {
         "scenario_path": os.path.join(dir, "scenario", "ur10e"), 
-        # "meshes_path": "/ros/ia_ros_meshes" // add viz
     }
 
     with open(robot_parameters_path) as jsonfile:
@@ -93,32 +92,28 @@ def generate_launch_description():
 
     joint_limit_params = PathJoinSubstitution(
         [
-            FindPackageShare("ur_setup"),
-            "robots",
+            os.path.join(dir, "robots"),
             robot_parameters["name"],
             "joint_limits.yaml",
         ]
     )
     kinematics_params = PathJoinSubstitution(
         [
-            FindPackageShare("ur_setup"),
-            "robots",
+            os.path.join(dir, "robots"),
             robot_parameters["name"],
             "default_kinematics.yaml",
         ]
     )
     physical_params = PathJoinSubstitution(
         [
-            FindPackageShare("ur_setup"),
-            "robots",
+            os.path.join(dir, "robots"),
             robot_parameters["name"],
             "physical_parameters.yaml",
         ]
     )
     visual_params = PathJoinSubstitution(
         [
-            FindPackageShare("ur_setup"),
-            "robots",
+            os.path.join(dir, "robots"),
             robot_parameters["name"],
             "visual_parameters.yaml",
         ]
@@ -223,17 +218,17 @@ def generate_launch_description():
         executable="tf_lookup",
         namespace="",
         output="screen",
-        parameters=[tf_parameters],
+        parameters=[scenario_path],
         remappings=[("/tf", "tf"), ("/tf_static", "tf_static")],
         emulate_tty=True,
     )
 
-    tf_broadcast_node = Node(
-        package="tf_broadcast",
-        executable="tf_broadcast",
+    tfbc_node = Node(
+        package="teaching_tfbc",
+        executable="broadcaster",
         namespace="",
         output="screen",
-        parameters=[tf_parameters],
+        parameters=[scenario_path],
         remappings=[("/tf", "tf"), ("/tf_static", "tf_static")],
         emulate_tty=True,
     )
@@ -253,7 +248,7 @@ def generate_launch_description():
         teaching_ghost_node,
         rviz_node,
         tf_lookup_node,
-        tf_broadcast_node,
+        tfbc_node,
         teaching_marker_node
     ]
 
