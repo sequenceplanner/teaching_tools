@@ -6,9 +6,9 @@ use k::{Isometry3, Translation3, UnitQuaternion, Vector3};
 use r2r::geometry_msgs::msg::TransformStamped;
 use r2r::sensor_msgs::msg::JointState;
 use r2r::std_msgs::msg::Header;
-// use r2r::std_srvs::srv::{SetBool, Trigger};
+use r2r::std_srvs::srv::Trigger;
 use r2r::tf_tools_msgs::srv::LookupTransform;
-use r2r::ParameterValue;
+use r2r::{ParameterValue, ServiceRequest};
 use r2r::QosProfile;
 use std::fs::File;
 use std::io::Write;
@@ -91,8 +91,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     r2r::log_info!(NODE_ID, "Found joints: {:?}", joints);
     r2r::log_info!(NODE_ID, "Found links: {:?}", links);
 
-    // where is the ghost now
-    let joint_state = Arc::new(Mutex::new(JointState {
+    let initial_joint_value = JointState {
         header: Header {
             ..Default::default()
         },
@@ -126,7 +125,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         },
         ..Default::default()
-    }));
+    };
+
+    // initial joint value clone for the reset service
+    let initial_joint_value_clone = initial_joint_value.clone();
+
+    // where is the ghost now
+    let joint_state = Arc::new(Mutex::new(initial_joint_value));
 
     // the current kinematic chain of the ghost robot
     let chain = Arc::new(Mutex::new(chain.clone()));
@@ -138,11 +143,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let current_tcp = Arc::new(Mutex::new(initial_tcp_id));
 
     // a service to reset the ghost if it gets stuck
-    // let reset_ghost_service = node.create_service::<Trigger::Service>("reset_ghost")?;
-
-    // a service to change tcp, faceplate and settings...
-    // let reset_ghost_service =
-    //     node.create_service::<Trigger::Service>("reset_ghost")?;
+    let reset_ghost_service = node.create_service::<Trigger::Service>("reset_ghost")?;
 
     // listen to the teaching marker pose to calculate inverse kinematics from
     let teaching_pose_subscriber =
@@ -198,13 +199,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     r2r::log_info!(NODE_ID, "tf Lookup Service available.");
 
     // // offer a service to enable or disable remote control
-    // tokio::task::spawn(async move {
-    //     let result = reset_ghost_server(reset_ghost_service).await;
-    //     match result {
-    //         Ok(()) => r2r::log_info!(NODE_ID, "Remote Control Service call succeeded."),
-    //         Err(e) => r2r::log_error!(NODE_ID, "Remote Control Service call failed with: {}.", e),
-    //     };
-    // });
+    let joint_state_clone_3 = joint_state.clone();
+    tokio::task::spawn(async move {
+        let result = reset_ghost_server(reset_ghost_service, &joint_state_clone_3, &initial_joint_value_clone).await;
+        match result {
+            Ok(()) => r2r::log_info!(NODE_ID, "Remote Control Service call succeeded."),
+            Err(e) => r2r::log_error!(NODE_ID, "Remote Control Service call failed with: {}.", e),
+        };
+    });
 
     let current_chain_clone_2 = chain.clone();
     let current_face_plate_clone_2 = current_face_plate.clone();
@@ -446,9 +448,6 @@ async fn calculate_inverse_kinematics(
                         )),
                     );
 
-                    println!("where is the target {:?}", target);
-
-                    println!("end joint name {}", format!("{}-{}", face_plate_id, tcp_id));
                     // the last joint has to be rot type to be recognize, but we don't want it to roatate
                     let constraints = k::Constraints {
                         ignored_joint_names: vec![format!("{}-{}", face_plate_id, tcp_id)],
@@ -513,9 +512,6 @@ async fn ghost_publisher_callback(
                 ..Default::default()
             },
             name: joint_state.lock().unwrap().clone().name,
-            // .iter()
-            // .map(|x| format!("ghost_{}", x))
-            // .collect(),
             position,
             ..Default::default()
         };
@@ -564,7 +560,7 @@ async fn teaching_subscriber_callback(
                                 new_joint_state.position = joints;
                                 *joint_state.lock().unwrap() = new_joint_state;
                             }
-                            None => r2r::log_error!(NODE_ID, "Failed IK?"),
+                            None => r2r::log_error!(NODE_ID, "Calculating inverse kinematics failed."),
                         };
                     }
                     false => r2r::log_error!(
@@ -578,6 +574,24 @@ async fn teaching_subscriber_callback(
             None => {
                 r2r::log_error!(NODE_ID, "Subscriber did not get the message?");
             }
+        }
+    }
+}
+
+// provide a service to reset the joint position of the ghost to the initial state
+async fn reset_ghost_server(
+    mut service: impl Stream<Item = ServiceRequest<Trigger::Service>> + Unpin,
+    joint_state: &Arc<Mutex<JointState>>,
+    initial_joint_state: &JointState
+) -> Result<(), Box<dyn std::error::Error>> {
+    loop {
+        match service.next().await {
+            Some(_) => {
+                r2r::log_info!(NODE_ID, "Got reset ghost request.");
+                *joint_state.lock().unwrap() = initial_joint_state.clone();
+                continue;
+            }
+            None => (),
         }
     }
 }

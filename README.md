@@ -6,6 +6,7 @@
 
 ### Teaching marker
 TODO: add gif\
+TODO: marker reset service\
 TODO: marker pose preset service (and later gui)
 
 An interactive marker that can be moved around in the world.

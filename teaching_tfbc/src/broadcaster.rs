@@ -106,15 +106,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         node.spin_once(std::time::Duration::from_millis(1000));
     });
 
-    // // offer a service to load a different scene
-    // tokio::task::spawn(async move {
-    //     let result = reset_ghost_server(reset_ghost_service).await;
-    //     match result {
-    //         Ok(()) => r2r::log_info!(NODE_ID, "Remote Control Service call succeeded."),
-    //         Err(e) => r2r::log_error!(NODE_ID, "Remote Control Service call failed with: {}.", e),
-    //     };
-    // });
-
     r2r::log_info!(NODE_ID, "Node started.");
 
     handle.join().unwrap();
@@ -141,7 +132,6 @@ async fn static_frame_broadcaster_callback(
                 header: Header {
                     stamp: time_stamp.clone(),
                     frame_id: t.parent_frame_id.clone(),
-                    // ..Default::default()
                 },
                 child_frame_id: t.child_frame_id.clone(),
                 transform: t.transform.clone()

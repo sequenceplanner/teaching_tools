@@ -2,6 +2,7 @@ import rclpy
 from rclpy.node import Node
 from interactive_markers import InteractiveMarkerServer
 from builtin_interfaces.msg import Time
+from std_srvs.srv import Trigger
 from geometry_msgs.msg import TransformStamped
 from geometry_msgs.msg import Transform
 from tf_tools_msgs.srv import LookupTransform
@@ -16,6 +17,8 @@ class PoseSaverMarker(Node):
         self.interactive_markers_server = InteractiveMarkerServer(
             self, "teaching_marker_server"
         )
+
+        self.reset_service = self.create_service(Trigger, 'reset_teaching_marker', self.reset_teaching_marker_callback)
 
         self.publisher = self.create_publisher(
             TransformStamped, "teaching_pose", 10
@@ -209,6 +212,13 @@ class PoseSaverMarker(Node):
             int_marker, feedback_callback=self.process_feedback
         )
 
+    def reset_teaching_marker_callback(self, request, response):
+        self.interactive_markers_server.clear()
+        self.create_interactive_marker(False, InteractiveMarkerControl.NONE, self.initial_marker_pose, True)
+        self.interactive_markers_server.applyChanges()
+        self.get_logger().info('Got request to reset teaching marker.')
+        response.success = True
+        return response
 
 def main(args=None):
     rclpy.init(args=args)
