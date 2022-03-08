@@ -100,6 +100,7 @@ def generate_launch_description():
         output="screen",
         parameters=[ghost_robot_parameters],
         remappings=[("/tf", "tf"), ("/tf_static", "tf_static")],
+        emulate_tty=True,
     )
 
     tf_lookup_node = Node(

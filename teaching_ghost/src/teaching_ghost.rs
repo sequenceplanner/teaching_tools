@@ -107,7 +107,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         NODE_ID,
                         "Parameter 'initial_joint_state' has to be of type StringArray."
                     );
-                    vec![0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                    chain
+                    .iter_joints()
+                    .map(|_| 0.0)
+                    .collect()
                 }
             },
             None => {
@@ -423,7 +426,7 @@ async fn calculate_inverse_kinematics(
             // so we use that instead to help the solver
             let arm = k::SerialChain::from_end(ee_joint);
 
-            // since we have added a new joint, it is now a 7DoF robot
+            // since we have added a new joint, it is now a n + 1 DoF robot
             let mut positions = act_joint_state.position.clone(); //.lock().unwrap().clone().position;
             positions.push(0.0);
 
@@ -457,7 +460,7 @@ async fn calculate_inverse_kinematics(
                     // solve, but with locking the last joint that we added
                     match solver.solve_with_constraints(&arm, &target, &constraints) {
                         Ok(()) => {
-                            // get the solution and remove the seventh '0.0' joint value
+                            // get the solution and remove the (n + 1) - th '0.0' joint value
                             let mut j = arm.joint_positions();
                             match j.pop() {
                                 Some(_) => Some(j),

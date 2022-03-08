@@ -6,15 +6,14 @@
 
 ### Teaching marker
 TODO: add gif\
-TODO: marker reset service\
-TODO: marker pose preset service (and later gui)
+TODO: marker pose preset service (and later gui) (to test marker pose in some frame)
 
 An interactive marker that can be moved around in the world.
 The poseition of this marker is published and it can later be
 used to save new frames in the world, or update existing ones. 
 
 ### Teaching ghost
-TODO: ghost reset service\
+TODO: fix >=7dof robots last link removal?
 TODO: change tcp service (actually, this will be in the new broadcaster server)
 
 An inverse kinematics solution is calulated all the time so that
