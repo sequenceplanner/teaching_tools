@@ -430,7 +430,8 @@ async fn calculate_inverse_kinematics(
             let mut positions = act_joint_state.position.clone(); //.lock().unwrap().clone().position;
             positions.push(0.0);
 
-            // the solver needs an initial joint position to be set
+            // the solver needs an initial joint position to be set.
+            // check DoF so that this doesnt't fail when missmatch
             match arm.set_joint_positions(&positions) {
                 Ok(()) => {
                     // will have to experiment with these solver parameters

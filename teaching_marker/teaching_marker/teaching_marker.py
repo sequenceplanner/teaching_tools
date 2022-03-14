@@ -26,9 +26,11 @@ class PoseSaverMarker(Node):
 
         self.declare_parameter("initial_base_link_id", "default_value")
         self.declare_parameter("initial_tcp_id", "default_value")
+        self.declare_parameter("marker_scale", "default_value")
         
         self.base_link = self.get_parameter("initial_base_link_id").get_parameter_value().string_value
         self.tcp_link = self.get_parameter("initial_tcp_id").get_parameter_value().string_value
+        self.marker_scale = float(self.get_parameter("marker_scale").get_parameter_value().string_value)
 
         self.initial_marker_pose = TransformStamped()
         self.client = self.create_client(LookupTransform, "tf_lookup")
@@ -110,7 +112,7 @@ class PoseSaverMarker(Node):
         int_marker.pose.orientation.y = initial_pose.transform.rotation.y
         int_marker.pose.orientation.z = initial_pose.transform.rotation.z
         int_marker.pose.orientation.w = initial_pose.transform.rotation.w
-        int_marker.scale = 0.2
+        int_marker.scale = self.marker_scale
         int_marker.name = "teaching_pose"
         int_marker.description = "teaching_pose"
 
