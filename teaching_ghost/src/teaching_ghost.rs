@@ -602,14 +602,14 @@ async fn reset_ghost_server(
 
 // ask the lookup service for transforms from its buffer
 async fn lookup_tf(
-    parent_id: &str,
-    child_id: &str,
+    parent_frame_id: &str,
+    child_frame_id: &str,
     deadline: i32,
     tf_lookup_client: &r2r::Client<LookupTransform::Service>,
 ) -> Option<TransformStamped> {
     let request = LookupTransform::Request {
-        parent_id: parent_id.to_string(),
-        child_id: child_id.to_string(),
+        parent_frame_id: parent_frame_id.to_string(),
+        child_frame_id: child_frame_id.to_string(),
         deadline,
     };
 
@@ -622,8 +622,8 @@ async fn lookup_tf(
     r2r::log_info!(
         NODE_ID,
         "Request to lookup parent '{}' to child '{}' sent.",
-        parent_id,
-        child_id
+        parent_frame_id,
+        child_frame_id
     );
 
     match response.success {
@@ -632,8 +632,8 @@ async fn lookup_tf(
             r2r::log_error!(
                 NODE_ID,
                 "Couldn't lookup tf for parent '{}' and child '{}'.",
-                parent_id,
-                child_id
+                parent_frame_id,
+                child_frame_id
             );
             None
         }
