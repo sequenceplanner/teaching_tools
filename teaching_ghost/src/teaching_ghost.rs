@@ -7,7 +7,7 @@ use r2r::geometry_msgs::msg::TransformStamped;
 use r2r::sensor_msgs::msg::JointState;
 use r2r::std_msgs::msg::Header;
 use r2r::std_srvs::srv::Trigger;
-use r2r::tf_tools_msgs::srv::LookupTransform;
+use r2r::scene_manipulation_msgs::srv::LookupTransform;
 use r2r::{ParameterValue, ServiceRequest};
 use r2r::QosProfile;
 use std::fs::File;

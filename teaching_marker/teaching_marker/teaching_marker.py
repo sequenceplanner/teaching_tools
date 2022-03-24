@@ -5,7 +5,7 @@ from builtin_interfaces.msg import Time
 from std_srvs.srv import Trigger
 from geometry_msgs.msg import TransformStamped
 from geometry_msgs.msg import Transform
-from tf_tools_msgs.srv import LookupTransform
+from scene_manipulation_msgs.srv import LookupTransform
 from visualization_msgs.msg import InteractiveMarker
 from visualization_msgs.msg import InteractiveMarkerControl
 
