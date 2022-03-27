@@ -33,7 +33,7 @@ class PoseSaverMarker(Node):
         self.marker_scale = float(self.get_parameter("marker_scale").get_parameter_value().string_value)
 
         self.initial_marker_pose = TransformStamped()
-        self.client = self.create_client(LookupTransform, "tf_lookup")
+        self.client = self.create_client(LookupTransform, "lookup_transform")
         
         while not self.client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info("tf lookup service not available, waiting again...")
