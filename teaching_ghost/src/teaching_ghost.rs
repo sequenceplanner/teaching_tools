@@ -193,13 +193,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // keep the node alive
     let handle = std::thread::spawn(move || loop {
-        node.spin_once(std::time::Duration::from_millis(100));
+        node.spin_once(std::time::Duration::from_millis(1000));
     });
 
     // before the other things in this node can start, it makes sense to wait for the tf lookup service to become alive
     r2r::log_warn!(NODE_ID, "Waiting for tf Lookup service...");
     waiting_for_tf_lookup_server.await?;
     r2r::log_info!(NODE_ID, "tf Lookup Service available.");
+
+
 
     // // offer a service to enable or disable remote control
     let joint_state_clone_3 = joint_state.clone();
@@ -214,6 +216,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let current_chain_clone_2 = chain.clone();
     let current_face_plate_clone_2 = current_face_plate.clone();
     let current_tcp_clone_2 = current_tcp.clone();
+    std::thread::sleep(std::time::Duration::from_millis(2000));
     update_kinematic_chain(
         &tf_lookup_client,
         &current_chain_clone_2,
