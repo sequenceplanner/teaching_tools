@@ -47,7 +47,7 @@ class PoseSaverMarker(Node):
         response = LookupTransform.Response()
         request.parent_frame_id = self.base_link
         request.child_frame_id = self.tcp_link
-        request.deadline = 3000
+        # request.deadline = 3000
         future = self.client.call_async(request)
         self.get_logger().info(f"request sent: {request}")
         while rclpy.ok():

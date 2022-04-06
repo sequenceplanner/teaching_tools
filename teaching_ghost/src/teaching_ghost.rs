@@ -346,7 +346,7 @@ async fn update_kinematic_chain(
     let tcp_id_local = &tcp_id.lock().unwrap();
 
     let tcp_in_face_plate =
-        lookup_tf(face_plate_id_local, &tcp_id_local, 3000, tf_lookup_client).await;
+        lookup_tf(face_plate_id_local, &tcp_id_local, tf_lookup_client).await;
 
     match tcp_in_face_plate {
         Some(frame) => {
@@ -607,13 +607,13 @@ async fn reset_ghost_server(
 async fn lookup_tf(
     parent_frame_id: &str,
     child_frame_id: &str,
-    deadline: i32,
+    // deadline: i32,
     tf_lookup_client: &r2r::Client<LookupTransform::Service>,
 ) -> Option<TransformStamped> {
     let request = LookupTransform::Request {
         parent_frame_id: parent_frame_id.to_string(),
         child_frame_id: child_frame_id.to_string(),
-        deadline,
+        // deadline,
     };
 
     let response = tf_lookup_client
