@@ -1,6 +1,6 @@
 from setuptools import setup
 
-package_name = "teaching_marker"
+package_name = "teaching_ghost_marker"
 
 setup(
     name=package_name,
@@ -22,12 +22,12 @@ setup(
         "Programming Language :: Python",
         "Topic :: Software Development",
     ],
-    description="A marker to save poses.",
+    description="A marker for the ghost to track.",
     license="",
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "teaching_marker = teaching_marker.teaching_marker:main",
+            "teaching_ghost_marker = teaching_ghost_marker.teaching_ghost_marker:main",
         ],
     },
 )

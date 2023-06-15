@@ -2,31 +2,33 @@ import rclpy
 from rclpy.node import Node
 from interactive_markers import InteractiveMarkerServer
 from builtin_interfaces.msg import Time
-from std_srvs.srv import Trigger
 from geometry_msgs.msg import TransformStamped
 from geometry_msgs.msg import Transform
 from scene_manipulation_msgs.srv import LookupTransform
 from visualization_msgs.msg import InteractiveMarker
 from visualization_msgs.msg import InteractiveMarkerControl
+from std_srvs.srv import Trigger
+from tf2_ros import TransformBroadcaster
 
-class PoseSaverMarker(Node):
+class SceneManipulationMarker(Node):
     def __init__(self):
-        self.node_name = "teaching_marker"
+        self.node_name = "teaching_marker_ghost_robot"
         super().__init__(self.node_name)
 
         self.interactive_markers_server = InteractiveMarkerServer(
-            self, "teaching_marker_server"
+            self, "teaching_marker_ghost_robot_server"
         )
 
-        self.reset_service = self.create_service(Trigger, 'reset_teaching_marker', self.reset_teaching_marker_callback)
+        # self.marker_features = self.create_service(ExtraFeatures, 'marker_features', self.marker_features_callback)
+        self.reset_service = self.create_service(Trigger, 'reset_teaching_marker_ghost_robot', self.reset_teaching_marker_callback)
 
         self.publisher = self.create_publisher(
-            TransformStamped, "teaching_pose", 10
+            TransformStamped, "teaching_marker_ghost_robot", 10
         )
 
         self.declare_parameter("initial_base_link_id", "default_value")
         self.declare_parameter("initial_tcp_id", "default_value")
-        self.declare_parameter("marker_scale", "default_value")
+        self.declare_parameter("marker_scale", "0.5")
         
         self.base_link = self.get_parameter("initial_base_link_id").get_parameter_value().string_value
         self.tcp_link = self.get_parameter("initial_tcp_id").get_parameter_value().string_value
@@ -39,6 +41,24 @@ class PoseSaverMarker(Node):
             self.get_logger().info("tf lookup service not available, waiting again...")
 
         self.initial_marker_pose = self.get_initial_marker_pose()
+        self.create_interactive_marker(False, InteractiveMarkerControl.NONE, self.initial_marker_pose, True)
+        self.interactive_markers_server.applyChanges()
+
+        self.initial_marker_pose.child_frame_id = "teaching_marker_ghost_robot"
+        self.marker_pose = self.initial_marker_pose
+
+        self.broadcaster = TransformBroadcaster(self)
+
+    
+
+        self.lookup_client = self.create_client(LookupTransform, "lookup_transform")
+        
+        while not self.lookup_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info("tf lookup service not available, waiting again...")
+
+        timer_period = 0.05  # seconds
+        self.timer = self.create_timer(timer_period, self.timer_callback)        
+
         self.create_interactive_marker(False, InteractiveMarkerControl.NONE, self.initial_marker_pose, True)
         self.interactive_markers_server.applyChanges()
 
@@ -63,6 +83,22 @@ class PoseSaverMarker(Node):
                     self.get_logger().info(f"service call completed")
                     return response.transform
 
+        self.marker_pose = self.initial_marker_pose
+
+    def timer_callback(self):
+        current_time = self.get_clock().now().seconds_nanoseconds()
+        self.marker_pose.header.stamp.sec = current_time[0]
+        self.marker_pose.header.stamp.nanosec = current_time[1]
+        self.broadcaster.sendTransform(self.marker_pose)
+
+    def reset_teaching_marker_callback(self, request, response):
+        self.interactive_markers_server.clear()
+        self.create_interactive_marker(False, InteractiveMarkerControl.NONE, self.initial_marker_pose, True)
+        self.interactive_markers_server.applyChanges()
+        self.get_logger().info('Got request to reset teaching marker.')
+        response.success = True
+        return response
+
     def create_marker_control(self, msg):
         control = InteractiveMarkerControl()
         control.always_visible = True
@@ -83,13 +119,12 @@ class PoseSaverMarker(Node):
         quaternion_msg.w *= s
 
     def process_feedback(self, feedback):
-        t = Time()
-        t.sec = feedback.header.stamp.sec
-        t.nanosec = feedback.header.stamp.nanosec
+        current_time = self.get_clock().now().seconds_nanoseconds()
         tf = TransformStamped()
         tf.header.frame_id = feedback.header.frame_id
-        tf.header.stamp = t
-        tf.child_frame_id = "teaching_pose"
+        tf.header.stamp.sec = current_time[0]
+        tf.header.stamp.nanosec = current_time[1]
+        tf.child_frame_id = "teaching_marker_ghost_robot"
         transf = Transform()
         transf.translation.x = feedback.pose.position.x
         transf.translation.y = feedback.pose.position.y
@@ -99,6 +134,7 @@ class PoseSaverMarker(Node):
         transf.rotation.z = feedback.pose.orientation.z
         transf.rotation.w = feedback.pose.orientation.w
         tf.transform = transf
+        self.marker_pose = tf        
         self.publisher.publish(tf)
 
     # lookup where the tcp is and put the marker there instead
@@ -112,9 +148,9 @@ class PoseSaverMarker(Node):
         int_marker.pose.orientation.y = initial_pose.transform.rotation.y
         int_marker.pose.orientation.z = initial_pose.transform.rotation.z
         int_marker.pose.orientation.w = initial_pose.transform.rotation.w
-        int_marker.scale = self.marker_scale
-        int_marker.name = "teaching_pose"
-        int_marker.description = "teaching_pose"
+        int_marker.scale = 0.3 # 1.5 #self.marker_scale
+        int_marker.name = "teaching_marker_ghost_robot"
+        int_marker.description = "teaching_marker_ghost_robot"
 
         self.create_marker_control(int_marker)
         int_marker.controls[0].interaction_mode = interaction_mode
@@ -214,20 +250,12 @@ class PoseSaverMarker(Node):
             int_marker, feedback_callback=self.process_feedback
         )
 
-    def reset_teaching_marker_callback(self, request, response):
-        self.interactive_markers_server.clear()
-        self.create_interactive_marker(False, InteractiveMarkerControl.NONE, self.initial_marker_pose, True)
-        self.interactive_markers_server.applyChanges()
-        self.get_logger().info('Got request to reset teaching marker.')
-        response.success = True
-        return response
-
 def main(args=None):
     rclpy.init(args=args)
 
-    viz = PoseSaverMarker()
-    rclpy.spin(viz)
-    viz.destroy_node()
+    smm = SceneManipulationMarker()
+    rclpy.spin(smm)
+    smm.destroy_node()
     rclpy.shutdown()
 
 

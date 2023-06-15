@@ -150,7 +150,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // listen to the teaching marker pose to calculate inverse kinematics from
     let teaching_pose_subscriber =
-        node.subscribe::<TransformStamped>("teaching_pose", QosProfile::default())?;
+        node.subscribe::<TransformStamped>("teaching_marker_ghost_robot", QosProfile::default())?;
 
     // publish the ghost joint state of the robot at the simulation rate
     let pub_timer = node.create_wall_timer(std::time::Duration::from_millis(SIM_RATE_MS))?;
