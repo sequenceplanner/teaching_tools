@@ -39,7 +39,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let initial_tcp_id_param = params_things.get("initial_tcp_id");
 
     let initial_face_plate_id = match initial_face_plate_id_param {
-        Some(p) => match p {
+        Some(p) => match &p.value {
             ParameterValue::String(value) => value.to_string(),
             _ => {
                 r2r::log_warn!(
@@ -56,7 +56,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let initial_tcp_id = match initial_tcp_id_param {
-        Some(p) => match p {
+        Some(p) => match &p.value {
             ParameterValue::String(value) => value.to_string(),
             _ => {
                 r2r::log_warn!(
@@ -74,7 +74,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // make a manipulatable kinematic chain using a urdf or through the xacro pipeline
     let (chain, joints, links) = match urdf_raw {
-        Some(p2) => match p2 {
+        Some(p2) => match &p2.value {
             ParameterValue::String(urdf) => chain_from_urdf_raw(urdf).await,
             _ => {
                 r2r::log_error!(NODE_ID, "Parameter 'urdf_raw' has to be of type String.");
@@ -97,7 +97,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         },
         name: joints.clone(),
         position: match initial_joint_state {
-            Some(p) => match p {
+            Some(p) => match &p.value {
                 ParameterValue::StringArray(joints) => joints
                     .iter()
                     .map(|j| j.parse::<f64>().unwrap_or_default())
@@ -146,7 +146,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let current_tcp = Arc::new(Mutex::new(initial_tcp_id));
 
     // a service to reset the ghost if it gets stuck
-    let reset_ghost_service = node.create_service::<Trigger::Service>("reset_ghost")?;
+    let reset_ghost_service = node.create_service::<Trigger::Service>("reset_ghost", QosProfile::default())?;
 
     // listen to the teaching marker pose to calculate inverse kinematics from
     let teaching_pose_subscriber =
@@ -188,8 +188,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     // a client that asks a tf lookup service for transformations between frames in the tf tree
-    let tf_lookup_client = node.create_client::<LookupTransform::Service>("lookup_transform")?;
-    let waiting_for_tf_lookup_server = node.is_available(&tf_lookup_client)?;
+    let tf_lookup_client = node.create_client::<LookupTransform::Service>("lookup_transform", QosProfile::default())?;
+    let waiting_for_tf_lookup_server = r2r::Node::is_available(&tf_lookup_client)?;
 
     // keep the node alive
     let handle = std::thread::spawn(move || loop {
@@ -307,7 +307,7 @@ async fn chain_from_urdf_raw(urdf: &str) -> (Chain<f64>, Vec<String>, Vec<String
 
 // actually make the kinematic chain from the urdf file (supplied or generated)
 async fn make_chain(urdf_path: &str) -> (Chain<f64>, Vec<String>, Vec<String>) {
-    match k::Chain::<f64>::from_urdf_file(urdf_path.clone()) {
+    match k::Chain::<f64>::from_urdf_file(urdf_path) {
         Ok(c) => {
             r2r::log_info!(NODE_ID, "Loading urdf file: '{:?}'.", urdf_path);
             (
